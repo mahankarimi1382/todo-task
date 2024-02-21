@@ -1,118 +1,142 @@
-import Image from "next/image";
-import { Inter } from "next/font/google";
-
-const inter = Inter({ subsets: ["latin"] });
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { MdDeleteForever } from "react-icons/md";
+import { MdOutlineDownloadDone } from "react-icons/md";
 
 export default function Home() {
+  const baseUrl = "https://hr-todo.sahda.ir";
+  const [item, setItem] = useState("");
+  const [uncompleted, setUncompleted] = useState([]);
+  useEffect(() => {
+    getTasks();
+  }, []);
+  const editTask = (id) => {
+    let body = JSON.stringify({
+      id,
+      type: "2",
+      sort: true,
+    });
+
+    let request = {
+      method: "PUT",
+      body,
+    };
+
+    fetch(`${baseUrl}/update.php`, request)
+      .then((res) => res.text())
+      .then((res) => {
+        getTasks();
+        console.log(res);
+      })
+      .catch((err) => console.log(err));
+  };
+  const deleteTask = (id) => {
+    let body = `{"id":${id},"type":2 }`;
+    let request = {
+      method: "DELETE",
+      body,
+    };
+
+    fetch(`${baseUrl}/delete.php`, request)
+      .then((res) => res.text())
+      .then((res) => {
+        console.log(res);
+        getTasks();
+      })
+      .catch((error) => console.log("error", error));
+  };
+  const getTasks = () => {
+    fetch(baseUrl, {
+      method: "Get",
+    })
+      .then((res) => res.text())
+      .then((res) => {
+        const resualt = JSON.parse(res);
+        if (resualt.uncompleted) {
+          setUncompleted(resualt.uncompleted);
+        }
+      })
+      .catch((err) => console.log("error", err));
+  };
+
+  const postTasks = () => {
+    let body = JSON.stringify({
+      item,
+    });
+    setItem("");
+    let request = {
+      method: "POST",
+      body,
+    };
+
+    fetch(`${baseUrl}/create/task/`, request)
+      .then((res) => res.text())
+      .then((res) => {
+        getTasks();
+
+        console.log(res);
+      })
+      .catch((err) => console.log("error", err));
+  };
   return (
-    <main
-      className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
-    >
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">pages/index.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+    <div className=" bg-cyan-700 h-screen w-full">
+      <div className="flex items-center flex-col">
+        <div className="flex flex-col justify-evenly items-center p-5 rounded bg-white w-1/2 h-36 shadow-2xl">
+          <div className=" -mt-5 w-full">
+            <h2 className=" text-xl">type somthing to do:</h2>
+          </div>
+          <div className=" w-full flex justify-evenly">
+            <input
+              onChange={(e) => setItem(e.target.value)}
+              className=" w-[79%] p-2 h-10 border-2 rounded-md border-cyan-700"
             />
-          </a>
+            <button
+              onClick={() => {
+                postTasks(item);
+                setItem("");
+              }}
+              className=" w-[19%] rounded-md bg-sky-400 hover:text-white hover:bg-sky-600"
+            >
+              Add
+            </button>
+          </div>
         </div>
+        <div className="flex w-full justify-center">
+          <div className=" flex w-full flex-col justify-center items-center">
+            {uncompleted.map((item, index) => {
+              console.log(item.item);
+              return (
+                <div
+                  className=" rounded-lg p-4 w-1/2 h-14 m-2 justify-between flex items-center bg-white"
+                  key={item.id}
+                >
+                  <div>
+                    <h2>
+                      {index + 1}-{item.item}
+                    </h2>
+                  </div>
+                  <div className="flex gap-4">
+                    <MdDeleteForever
+                      onClick={() => deleteTask(item.id)}
+                      className=" text-red-600 text-2xl"
+                    />
+                    <MdOutlineDownloadDone
+                      onClick={() => editTask(item.id)}
+                      className=" text-gray-600 text-2xl"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <Link
+          className="flex items-center p-2 justify-center rounded-2xl h-10 bg-sky-400"
+          href="/Done"
+        >
+          click to see your done tasks
+        </Link>
       </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Discover and deploy boilerplate example Next.js&nbsp;projects.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </div>
   );
 }
